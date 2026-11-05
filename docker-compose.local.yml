@@ -1,0 +1,101 @@
+# BAREE local stack (isolated). Separate compose project, separate volumes, loopback-only ports.
+# The project's own docker-compose.yml is NOT used and NOT modified.
+# Always driven through scripts/windows-*.ps1 (they set BAREE_APP_DIR and the ports).
+name: baree-local
+
+services:
+  pgsql:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_DB: baree
+      POSTGRES_USER: baree_owner
+      POSTGRES_PASSWORD: ${BAREE_PG_OWNER_PASSWORD:-owner-secret}
+      APP_DB_PASSWORD: ${BAREE_PG_APP_PASSWORD:-app}
+    ports: ["127.0.0.1:${BAREE_PG_PORT:-55432}:5432"]
+    volumes:
+      - baree_local_pgdata:/var/lib/postgresql/data
+      - ./docker/pg-init.sh:/docker-entrypoint-initdb.d/10-app-role.sh:ro
+    healthcheck:
+      # -h 127.0.0.1: the temporary init server only listens on the socket, so this waits for the real server.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U baree_owner -d baree"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  redis:
+    image: redis:8-alpine
+    ports: ["127.0.0.1:${BAREE_REDIS_PORT:-56379}:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  minio:
+    # Docker Hub/Quay minio/minio were withdrawn (MinIO went source-only). This is a community rebuild of MinIO's final upstream
+    # release (RELEASE.2025-10-15T17-29-55Z), pinned by tag AND digest. Frozen: no future security patches - local dev only, loopback ports.
+    image: coollabsio/minio:RELEASE.2025-10-15T17-29-55Z@sha256:69b55a1c1c5dc285ce04db96689f5b2102317fc77a50680a1874ca6efd1c87f9
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: ${BAREE_MINIO_PASSWORD:-minio-secret}
+    ports:
+      - "127.0.0.1:${BAREE_MINIO_PORT:-59000}:9000"
+      - "127.0.0.1:${BAREE_MINIO_CONSOLE_PORT:-59001}:9001"
+    volumes: ["baree_local_minio:/data"]
+
+  mailpit:
+    image: axllent/mailpit
+    ports: ["127.0.0.1:${BAREE_MAILPIT_PORT:-58025}:8025"]   # web UI only; SMTP stays on the internal network (mailpit:1025)
+
+  gotenberg:
+    image: gotenberg/gotenberg:8
+    command: ["gotenberg", "--chromium-disable-javascript=true", "--api-timeout=60s"]
+
+  clamav:
+    image: clamav/clamav:stable
+    profiles: ["clamav"]
+
+  app:
+    build:
+      context: ./docker/dev
+      args:
+        PHP_IMAGE: ${BAREE_PHP_IMAGE:-php:8.5-cli-bookworm}
+    image: baree-local-php:dev
+    init: true
+    working_dir: /app
+    command: ["bash", "/overlay/docker/dev/start.sh"]
+    environment:
+      BAREE_WEB_PORT: ${BAREE_WEB_PORT:-8000}
+      BAREE_REVERB_PORT: ${BAREE_REVERB_PORT:-8081}
+      BAREE_WITH_CLAMAV: ${BAREE_WITH_CLAMAV:-0}
+      BAREE_PG_OWNER_PASSWORD: ${BAREE_PG_OWNER_PASSWORD:-owner-secret}
+      BAREE_PG_APP_PASSWORD: ${BAREE_PG_APP_PASSWORD:-app}
+      BAREE_MINIO_PASSWORD: ${BAREE_MINIO_PASSWORD:-minio-secret}
+    ports:
+      - "127.0.0.1:${BAREE_WEB_PORT:-8000}:${BAREE_WEB_PORT:-8000}"
+      - "127.0.0.1:${BAREE_REVERB_PORT:-8081}:${BAREE_REVERB_PORT:-8081}"
+    volumes:
+      - ${BAREE_APP_DIR:?BAREE_APP_DIR is set by scripts/windows-*.ps1}:/app
+      - baree_local_vendor:/app/vendor            # vendor/ and node_modules/ live in Docker volumes:
+      - baree_local_node_modules:/app/node_modules  # symlinks and speed are unreliable on Windows bind mounts
+      - baree_local_composer_cache:/opt/composer/cache
+      - baree_local_npm_cache:/root/.npm
+      - ./:/overlay:ro
+    depends_on:
+      pgsql: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:${BAREE_WEB_PORT:-8000}/up"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 30s
+
+volumes:
+  baree_local_pgdata:
+  baree_local_minio:
+  baree_local_vendor:
+  baree_local_node_modules:
+  baree_local_composer_cache:
+  baree_local_npm_cache:

@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push: { branches: [main] }
+  pull_request:
+
+concurrency: { group: ci-${{ github.ref }}, cancel-in-progress: true }
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env: { POSTGRES_DB: baree_test, POSTGRES_USER: baree_owner, POSTGRES_PASSWORD: owner }
+        ports: ['5432:5432']
+        options: --health-cmd "pg_isready -U baree_owner" --health-interval 5s --health-timeout 5s --health-retries 20
+      redis:
+        image: redis:8
+        ports: ['6379:6379']
+    env:
+      APP_ENV: testing
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_DATABASE: baree_test
+      DB_USERNAME: baree_owner
+      DB_PASSWORD: owner
+      REDIS_HOST: 127.0.0.1
+      BAREE_AV_SCANNER: none
+      EMBEDDINGS_DRIVER: fake
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with: { php-version: '8.5', extensions: 'pdo_pgsql, redis, zip, intl, bcmath, gd', coverage: none }
+      - name: Refuse vulnerable PHP
+        run: php -r 'exit(version_compare(PHP_VERSION, "8.5.12", ">=") ? 0 : 1);'
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - run: composer audit
+      - run: vendor/bin/pint --test
+      - run: vendor/bin/phpstan analyse --no-progress --memory-limit=1G
+      - run: cp .env.example .env && php artisan key:generate
+      - name: Test suite (PostgreSQL, parallel)
+        run: php artisan test --parallel --processes=4
+      - name: Row-level security as the non-owner application role
+        run: |
+          php artisan migrate:fresh --force
+          PGPASSWORD=owner psql -h 127.0.0.1 -U baree_owner -d baree_test -v ON_ERROR_STOP=1 -v app_password=app -f scripts/pg-init.sql
+          DB_USERNAME=baree_app DB_PASSWORD=app php artisan test --configuration=phpunit.rls.xml
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm audit --omit=dev --audit-level=high
+      - run: npx vue-tsc --noEmit
+      - run: node scripts/i18n-check.mjs
+      - run: npm run build
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: gitleaks/gitleaks-action@v2
+        env: { GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}' }

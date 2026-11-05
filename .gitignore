@@ -1,0 +1,39 @@
+# Secrets and local configuration (never commit)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+auth.json
+
+# Generated at runtime by the Windows/Docker scripts
+setup.log
+test.log
+diagnose.log
+*.log
+.baree-setup/
+backup/
+*.sql
+*.dump
+*.bak
+
+# Dependencies and build output
+/vendor/
+/node_modules/
+/public/build/
+/public/hot
+/public/storage
+/storage/*.key
+/storage/logs/
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/framework/testing/
+
+# Tooling / OS / IDE
+.phpunit.cache/
+.phpunit.result.cache
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

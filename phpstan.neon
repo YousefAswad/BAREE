@@ -1,0 +1,13 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    level: 6
+    paths:
+        - app
+        - routes
+        - database/seeders
+    excludePaths:
+        - app/Mcp # depends on the optional laravel/mcp package
+    treatPhpDocTypesAsCertain: false
+    reportUnmatchedIgnoredErrors: false

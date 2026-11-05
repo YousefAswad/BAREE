@@ -1,0 +1,29 @@
+# Local services only. The app itself runs with `composer run dev` (or Laravel Sail / Herd).
+services:
+  pgsql:
+    image: pgvector/pgvector:pg17   # pgvector for knowledge retrieval (embeddings)
+    environment:
+      POSTGRES_DB: baree
+      POSTGRES_USER: baree_owner      # owns the schema; runs migrations
+      POSTGRES_PASSWORD: owner-secret
+    ports: ["5432:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data", "./docker/pg-init.sh:/docker-entrypoint-initdb.d/10-app-role.sh:ro"]
+  redis:
+    image: redis:8-alpine
+    ports: ["6379:6379"]
+  minio:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    environment: { MINIO_ROOT_USER: minio, MINIO_ROOT_PASSWORD: minio-secret }
+    ports: ["9000:9000", "9001:9001"]
+  mailpit:
+    image: axllent/mailpit
+    ports: ["1025:1025", "8025:8025"]
+  gotenberg:
+    image: gotenberg/gotenberg:8     # HTML → PDF with correct Arabic shaping
+    ports: ["3000:3000"]
+  clamav:
+    image: clamav/clamav:stable      # uploaded files are scanned before agents can read them
+    ports: ["3310:3310"]
+volumes:
+  pgdata:

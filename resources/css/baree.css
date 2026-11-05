@@ -1,0 +1,25 @@
+/* BAREE "Dusk" theme tokens. Import from resources/css/app.css:  @import './baree.css'; */
+@theme {
+  --color-ink: #1E2238;
+  --color-indigo: #44529E;
+  --color-indigo-deep: #333F7E;
+  --color-apricot: #FFB48A;
+  --color-coral: #EE8B6B;
+  --color-lavender: #A9B4F0;
+  --color-mist: #ECEFFC;
+  --color-sand: #F6F4F1;
+  --color-stone: #E8E5E0;
+  /* NOT named 'muted': the starter kit's shadcn theme already owns --color-muted (a light background tone), which made text-muted invisible. */
+  --color-subtle: #4F5269;
+  --color-line: #D9D5CE;
+  --color-success: #1F7A4D;
+  --color-warning: #8A5A00;
+  --font-display: 'Alexandria', ui-sans-serif, system-ui, sans-serif;
+  --font-body: 'Almarai', ui-sans-serif, system-ui, sans-serif;
+}
+
+:root { color-scheme: light; }
+html[dir='rtl'] body { font-family: var(--font-body); line-height: 1.6; background: var(--color-sand); color: var(--color-ink); }
+.font-display { font-family: var(--font-display); line-height: 1.45; }
+:focus-visible { outline: 3px solid var(--color-coral); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
