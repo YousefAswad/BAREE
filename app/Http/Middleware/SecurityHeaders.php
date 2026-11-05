@@ -37,6 +37,12 @@ final class SecurityHeaders
         $response->headers->set('Permissions-Policy', 'camera=(), geolocation=(), microphone=(self)');
         $response->headers->set('Cross-Origin-Opener-Policy', 'same-origin');
 
+        // Authenticated pages must never be restored from the bfcache/HTTP cache after logout (browser Back).
+        if ($request->user()) {
+            $response->headers->set('Cache-Control', 'no-store, private, max-age=0');
+            $response->headers->set('Pragma', 'no-cache');
+        }
+
         if ($request->isSecure()) {
             $response->headers->set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
         }

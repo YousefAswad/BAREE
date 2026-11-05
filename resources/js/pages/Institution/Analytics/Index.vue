@@ -19,7 +19,7 @@ const totalOutputs = computed(() => Object.values(props.outputs_by_type).reduce(
 
 <template>
   <AdminShell portal="institution" active="analytics" :title="$t('الاستخدام والأثر')" :subtitle="$t('أي قسم أقل من {k} أشخاص بيظهر مجمّع بدون تفاصيل.', { k: n(minGroup) })">
-    <div class="mb-6 grid grid-cols-[repeat(auto-fit,minmax(190px,1fr))] gap-4">
+    <div class="mb-6 grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-4">
       <StatCard :label="$t('مخرجات آخر ٩٠ يوم')" :value="n(totalOutputs)" />
       <StatCard :label="$t('ساعات موفّرة')" :value="`~${n(hours_saved_estimate)}`" :hint="$t('تقدير حسب نوع المهام')" />
       <StatCard :label="$t('ساعات تطوير مهني')" :value="n(learning_hours)" dark />

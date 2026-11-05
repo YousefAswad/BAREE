@@ -19,7 +19,7 @@ const paid = (id: string) => useForm({ reference: refs[id] ?? '' }).post(`/platf
 
 <template>
   <AdminShell portal="platform" active="billing" :title="$t('الفوترة')">
-    <div class="mb-6 grid grid-cols-[repeat(auto-fit,minmax(190px,1fr))] gap-4">
+    <div class="mb-6 grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-4">
       <StatCard v-for="(v, cur) in mrr" :key="cur" :label="`MRR ${cur}`" :value="money(v, cur as string)" dark />
       <StatCard :label="$t('نشطة')" :value="n(counts.active ?? 0)" />
       <StatCard :label="$t('متأخرة الدفع')" :value="n(counts.past_due ?? 0)" />

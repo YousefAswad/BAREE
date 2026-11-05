@@ -21,7 +21,7 @@ const support = useForm({ reason: '' });
 
 <template>
   <AdminShell portal="platform" active="tenants" :title="tenant.name" :subtitle="$t('حالة المؤسسة: {p0}', { p0: tenant.status })">
-    <div class="mb-6 grid grid-cols-[repeat(auto-fit,minmax(190px,1fr))] gap-4">
+    <div class="mb-6 grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-4">
       <StatCard :label="$t('المستخدمين')" :value="ar(tenant.users_count)" />
       <StatCard :label="$t('رصيد AI')" :value="ar(credits)" dark />
       <StatCard :label="$t('وضع الخصوصية')" :value="tenant.settings?.privacy?.mode ?? '—'" />

@@ -382,6 +382,22 @@ if ! done_ overlay-fixes-10; then
   mark overlay-fixes-10
 fi
 
+# Fix 12 (supersedes 11, whose build failed on a wrong icon package: the starter kit uses @lucide/vue, not lucide-vue-next): secure logout everywhere (shared LogoutButton in both shells, Fortify LogoutResponse -> /login, no-store on authenticated responses).
+if ! done_ overlay-fixes-12; then
+  step "Re-sync secure-logout changes #12 (with backup) and rebuild the frontend"
+  for f in resources/js/components/LogoutButton.vue resources/js/components/studio/StudioShell.vue resources/js/components/admin/AdminShell.vue resources/js/i18n/en.json app/Http/Responses/LogoutToLoginResponse.php app/Providers/BareeServiceProvider.php app/Http/Middleware/SecurityHeaders.php tests/Feature/Auth/AuthenticationTest.php tests/Feature/Auth/SecureLogoutTest.php resources/js/pages/Feed/Index.vue resources/js/pages/Platform/Dashboard.vue resources/css/baree.css resources/js/i18n/index.ts resources/js/pages/Institution/Analytics/Index.vue resources/js/pages/Institution/Billing/Index.vue resources/js/pages/Platform/Billing/Index.vue resources/js/pages/Platform/Tenants/Show.vue; do
+    [ -f "$OVERLAY/$f" ] || continue
+    if [ -f "$APP/$f" ] && cmp -s "$OVERLAY/$f" "$APP/$f"; then continue; fi
+    if [ -f "$APP/$f" ]; then
+      mkdir -p "$MARK/backup/$(dirname "$f")"; cp -p "$APP/$f" "$MARK/backup/$f.$(date -u +%Y%m%dT%H%M%SZ)"
+    fi
+    mkdir -p "$APP/$(dirname "$f")"; cp "$OVERLAY/$f" "$APP/$f"; echo "updated: $f"
+  done
+  (cd "$APP" && php -l app/Http/Responses/LogoutToLoginResponse.php && php -l app/Http/Middleware/SecurityHeaders.php && php -l app/Providers/BareeServiceProvider.php && php artisan optimize:clear) || echo "WARN: lint/optimize:clear failed"
+  (cd "$APP" && node scripts/i18n-check.mjs) || echo "WARN: i18n-check reported items (informational)"
+  if (cd "$APP" && npm run build); then mark overlay-fixes-12; else echo "ERROR: frontend build failed; stage overlay-fixes-12 NOT marked, re-run setup after fixing"; fi
+fi
+
 if ! done_ built; then
   step "Build frontend assets"
   php artisan storage:link --force || echo "WARN: storage:link failed on this filesystem (public disk link not needed for s3 disk)"

@@ -23,3 +23,9 @@ html[dir='rtl'] body { font-family: var(--font-body); line-height: 1.6; backgrou
 .font-display { font-family: var(--font-display); line-height: 1.45; }
 :focus-visible { outline: 3px solid var(--color-coral); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* Global robustness: no accidental horizontal page scroll, long words wrap, media never overflows. */
+html, body { max-width: 100%; overflow-x: clip; }
+img, svg, video { max-width: 100%; }
+h1, h2, h3, p, li { overflow-wrap: anywhere; }
+button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }

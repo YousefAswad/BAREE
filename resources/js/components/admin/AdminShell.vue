@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import LocaleSwitcher from '@/components/LocaleSwitcher.vue';
+import LogoutButton from '@/components/LogoutButton.vue';
 import { useLocale } from '@/composables/useLocale';
 import { Head, Link, usePage } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { Menu, X } from '@lucide/vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 const props = defineProps<{ portal: 'platform' | 'institution'; active: string; title: string; subtitle?: string }>();
@@ -47,17 +49,24 @@ const NAV = {
 const items = computed(() => NAV[props.portal]);
 const otherAreas = computed(() => ((page.props.areas ?? []) as { key: string; label: string; href: string }[]).filter((a) => a.key !== (props.portal === 'platform' ? 'platform' : 'admin')));
 const dark = computed(() => props.portal === 'platform');
+const menuOpen = ref(false);
 </script>
 
 <template>
   <Head :title="props.title" />
   <div :dir="dir" class="flex min-h-screen flex-wrap bg-sand text-ink">
     <aside class="w-full shrink-0 p-4 md:sticky md:top-0 md:h-screen md:w-72 md:overflow-y-auto md:p-5" :class="dark ? 'bg-ink text-white' : 'border-stone bg-white md:border-e'">
-      <div class="mb-6 flex items-baseline gap-2 px-2">
-        <span dir="ltr" class="font-display text-2xl font-extrabold tracking-wider">BAREE</span>
-        <span class="text-xs font-bold" :class="dark ? 'text-apricot' : 'text-indigo-deep'">{{ dark ? 'Super Admin' : $t('إدارة المؤسسة') }}</span>
+      <div class="mb-2 flex items-center justify-between gap-2 px-2 md:mb-6">
+        <div class="flex items-baseline gap-2">
+          <span dir="ltr" class="font-display text-2xl font-extrabold tracking-wider">BAREE</span>
+          <span class="text-xs font-bold" :class="dark ? 'text-apricot' : 'text-indigo-deep'">{{ dark ? 'Super Admin' : $t('إدارة المؤسسة') }}</span>
+        </div>
+        <button type="button" class="inline-flex size-11 items-center justify-center rounded-xl border md:hidden" :class="dark ? 'border-white/20' : 'border-stone'" :aria-label="menuOpen ? $t('إغلاق') : $t('القائمة')" :aria-expanded="menuOpen" aria-controls="admin-nav" @click="menuOpen = !menuOpen">
+          <X v-if="menuOpen" class="size-5" aria-hidden="true" /><Menu v-else class="size-5" aria-hidden="true" />
+        </button>
       </div>
-      <nav :aria-label="$t('القائمة')" class="flex flex-row flex-nowrap gap-1 overflow-x-auto pb-1 md:flex-col md:overflow-visible md:pb-0">
+      <div id="admin-nav" :class="menuOpen ? 'block' : 'hidden md:block'">
+      <nav :aria-label="$t('القائمة')" class="flex flex-col gap-1">
         <Link
           v-for="item in items"
           :key="item.key"
@@ -70,8 +79,10 @@ const dark = computed(() => props.portal === 'platform');
       <nav v-if="otherAreas.length" :aria-label="$t('القائمة')" class="mt-6 flex flex-row flex-wrap gap-1 border-t pt-4 md:flex-col" :class="dark ? 'border-white/10' : 'border-stone'">
         <Link v-for="a in otherAreas" :key="a.key" :href="a.href" class="flex min-h-[42px] items-center rounded-xl px-3 text-sm font-bold" :class="dark ? 'text-apricot hover:bg-white/10' : 'text-indigo hover:bg-sand'">{{ $t(a.label) }}</Link>
       </nav>
+      <div class="mt-4 border-t pt-4" :class="dark ? 'border-white/10' : 'border-stone'"><LogoutButton :variant="dark ? 'block' : 'outline'" class="w-full" /></div>
+      </div>
     </aside>
-    <main class="min-w-0 flex-1 p-4 sm:p-6 md:p-10">
+    <main id="main" class="min-w-0 flex-1 p-4 sm:p-6 md:p-10">
       <header class="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 class="font-display text-2xl font-extrabold text-ink md:text-3xl">{{ props.title }}</h1>

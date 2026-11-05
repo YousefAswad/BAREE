@@ -42,9 +42,13 @@ final class BareeServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Encrypt Inertia's history-state page cache so that, after logout rotates the key, browser Back cannot restore authenticated pages.
+        \Inertia\Inertia::encryptHistory();
+
         // Role-based landing after login/2FA, (the /dashboard redirect lives in routes/baree.php: it must be registered AFTER the starter kit's route).
         $this->app->singleton(\Laravel\Fortify\Contracts\LoginResponse::class, \App\Http\Responses\RoleAwareLoginResponse::class);
         $this->app->singleton(\Laravel\Fortify\Contracts\TwoFactorLoginResponse::class, \App\Http\Responses\RoleAwareLoginResponse::class);
+        $this->app->singleton(\Laravel\Fortify\Contracts\LogoutResponse::class, \App\Http\Responses\LogoutToLoginResponse::class);
 
         // Navigation: the areas the signed-in user may open (lazy, evaluated only when an Inertia response is built).
         \Inertia\Inertia::share('areas', fn () => \App\Support\HomeRedirect::areasFor(request()->user()));

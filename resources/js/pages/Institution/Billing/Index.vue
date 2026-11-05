@@ -22,7 +22,7 @@ const STATUS: Record<string, string> = { open: $t('مستحقة'), paid: $t('م�
 
 <template>
   <AdminShell portal="institution" active="billing" :title="$t('الاشتراك والفواتير')">
-    <div class="mb-6 grid grid-cols-[repeat(auto-fit,minmax(190px,1fr))] gap-4">
+    <div class="mb-6 grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-4">
       <StatCard :label="$t('الباقة')" :value="subscription ? t(subscription.plan?.name) : '—'" :hint="subscription ? $t(subscription.status) : ''" />
       <StatCard :label="$t('المقاعد')" :value="subscription ? `${n(seatsUsed)} / ${n(subscription.seats)}` : n(seatsUsed)" />
       <StatCard :label="$t('رصيد AI')" :value="n(credits)" dark />
